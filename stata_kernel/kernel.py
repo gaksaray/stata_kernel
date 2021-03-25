@@ -29,7 +29,7 @@ class StataKernel(Kernel):
         'mimetype': 'text/x-stata',
         'codemirror_mode': 'stata',
         'file_extension': '.do',
-        'version': '15.1'}
+        'version': '16.1'}
     help_links = [
         {'text': 'stata_kernel Help', 'url': 'https://kylebarron.dev/stata_kernel/'},
         {'text': 'Stata Help', 'url': 'https://www.stata.com/features/documentation/'}
