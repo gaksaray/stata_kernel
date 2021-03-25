@@ -296,6 +296,7 @@ class CodeManager():
             g_exp = dedent("""
             if _rc == 0 {{
                 noi gr export `"{0}/graph${1}.{2}"',{3} replace
+                noi gr export `"{0}/graph${1}.{2}"',{3} replace
                 global {1} = ${1} + 1
             }}\
             """.format(cache_dir_str, gph_cnt, graph_fmt, dim_str))
