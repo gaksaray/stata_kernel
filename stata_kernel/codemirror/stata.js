@@ -13,6 +13,8 @@
 // "use strict";
 
 var builtins_base = [
+  'frame', 'frames', 'pwf', 'cwf', 'frlink', 'frget',
+  'didreg', 'didregress',
   'if', 'else', 'in', 'foreach', 'for', 'forv', 'forva',
   'forval', 'forvalu', 'forvalue', 'forvalues', 'by', 'bys',
   'bysort', 'quietly', 'qui', 'about', 'ac',
@@ -363,6 +365,7 @@ var builtins_base = [
 var builtins_str = '(' + builtins_base.join('|') + ')\\b';
 
 var builtins_functions = [
+    'frval', '_frval',
     'Cdhms', 'Chms', 'Clock', 'Cmdyhms', 'Cofc', 'Cofd', 'F',
     'Fden', 'Ftail', 'I', 'J', '_caller', 'abbrev', 'abs', 'acos',
     'acosh', 'asin', 'asinh', 'atan', 'atan2', 'atanh',
