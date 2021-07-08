@@ -108,7 +108,6 @@ class StataSession():
             set linesize {2}
             clear all
             global stata_kernel_graph_counter = 0
-
             di "$S_DATE, $S_TIME"
             di "Stata version: `c(version)'"
             di "OS: $S_OS"
@@ -128,7 +127,6 @@ class StataSession():
 
     def init_windows(self):
         """Start Stata on Windows
-
         Until version 1.8.0, I included
         ```py
         from win32api import WinExec
@@ -140,7 +138,6 @@ class StataSession():
         I treated this as a bug, because that window was what a user looked at.
         However, for the purposes of `stata_kernel`, that's actually a helpful
         feature!
-
         - Though the graph window doesn't stay open, the _content_ of the
           graph is still in memory, so `graph export` still functions correctly!
         - This solves the problem of annoying graph windows popping up while
@@ -156,7 +153,6 @@ class StataSession():
             msg = """
             The Stata Automation library is not enabled. Follow the instructions
             here and then try again:
-
             https://kylebarron.dev/stata_kernel/getting_started/#prerequisites
             """
             raise com_error(dedent(msg))
@@ -173,7 +169,6 @@ class StataSession():
 
     def init_console(self):
         """Start Stata in console mode
-
         Spawn stata console and then wait/scroll to initial dot prompt.
         It tries to find the dot prompt immediately; otherwise it assumes
         there's a `more` stopping it, and presses `q` until the more has
@@ -205,7 +200,6 @@ class StataSession():
 
     def start_log_aut(self):
         """Start log and watch file
-
         This is used only when execution_mode is set to Automation. In the
         console mode I watch the pty directly.
         """
@@ -238,12 +232,10 @@ class StataSession():
 
     def do(self, text, md5, **kwargs):
         """Main wrapper for sequence of running user-given code
-
         Args:
             text (str)
             md5 (str): md5 of the text. This is passed to `expect` and is the
                 string that declares the end of the text sent to Stata.
-
         Kwargs:
             text_to_exclude (str): string of text to exclude from output. It is
                 expected that this string include many lines. It will be split
@@ -278,7 +270,6 @@ class StataSession():
 
     def expect(self, text, child, md5, text_to_exclude=None, display=True):
         """Watch for end of command from file descriptor or pty
-
         Args:
             text (str): Text sent to Stata.
             child (pexpect.spawn or fdpexpect.spawn): pty or log file to watch
@@ -298,8 +289,12 @@ class StataSession():
         md5Prompt = self.prompt_dot + " " + md5
         error_re = r'^r\((\d+)\);'
 
+        # Stata issues a note when saving graphs on disk, including the path.
+        # The beginning of this note will be captured by g_exp.
+        # Stata <17 reports this note within parantheses,
+        # Stata  17 reprts this note without parantheses -> hence the \(?
         # The minimum linesize in Stata is 40 characters
-        g_exp = r'\(file {}'.format(self.cache_dir_str[:34])
+        g_exp = r'\(?file {}'.format(self.cache_dir_str[:34])
 
         more = r'^--more--'
         eol = r'\r?\n'
@@ -325,6 +320,9 @@ class StataSession():
                 continue
             if match_index == 2:
                 g_path = [self.expect_graph(child, child.match.group(0))]
+                if g_path[0] is None:
+                    res = None
+                    continue
                 if ((config.get('graph_format') == 'svg')
                         and config.get('graph_svg_redundancy', 'True')) or (
                             (config.get('graph_format') == 'png')
@@ -406,33 +404,37 @@ class StataSession():
             if m == 2:
                 sleep(0.1)
 
-        fname = re.search(r'/(graph\d+\.\w+) written', res).group(1)
-        return self.cache_dir_str + '/' + fname
+        # the beginning of `(file ... not found)` of Stata 17 looks identical
+        # to the `(file ... written)` of Stata < 16 (both captured by g_exp)
+        # distinguish them by looking at the end of the output
+        regex = r'^\((note: )?file {}/graph\d+\.({}) not found\)'.format(
+                    self.cache_dir_str, '|'.join(self.kernel.graph_formats))
+        if re.search(regex, res):
+            return None
+        else:
+            fname = re.search(r'/(graph\d+\.\w+) (written|saved)', res).group(1)
+            return self.cache_dir_str + '/' + fname
 
     def clean_log_eol(self, child, code_lines, res):
         """Clean output when expect hit a newline
-
         For the first line, try to match `. {lines[0][:75]}`, i.e. the first
         75 characters of the first line. (75, or linesize - 5) is chosen so
         that it catches lines that are `  1. ` inside a program or for loop
-
         If it's a match, look at child.before to see how many characters were
         matched. If the line had more characters than were matched, take off
         the first 75 characters, prepend `> ` and try to match again.
         When the full line is matched, remove the first indexed object and
         repeat.
-
         Args:
             child (pexpect.spawn): pexpect instance to send break to
             code_lines (List[str]): List of code lines sent to console that have not yet been matched in output
             res (str): Current line of result/output
-
         Returns:
             (List[str], str, bool)
             - List of code lines not yet matched in output after this
             - Result to be displayed
         """
-        regex = r'^\(note: file {}/graph\d+\.({}) not found\)'.format(
+        regex = r'^\((note: )?file {}/graph\d+\.({}) not found\)'.format(
             self.cache_dir_str, '|'.join(self.kernel.graph_formats))
         if re.search(regex, res):
             return code_lines, None
@@ -478,15 +480,12 @@ class StataSession():
 
     def send_break(self, child, md5):
         """Send break to Stata
-
         Tell Stata to stop current execution. This is used when `expect` hits
         more and for a KeyboardInterrupt. I've found that ctrl-C, ctrl-D is the
         most consistent way for the console version to stop execution.
-
         Often, the first characters after sending ctrl-C, ctrl-D get removed.
         Thus, I send the md5 an extra time so that the full md5 can be matched
         without issues.
-
         Args:
             child (pexpect.spawn): pexpect instance to send break to
             md5 (str): The md5 to send a second time
@@ -501,7 +500,6 @@ class StataSession():
 
     def automate(self, cmd_name, value=None, **kwargs):
         """Execute `cmd_name` through Automation in a cross-platform manner
-
         - There are a few commands that take no arguments. For these, leave `value` as None and pass nothing for `kwargs`.
         - Most commands take one argument. For these, pass a `value`.
         - A couple commands take extra arguments. For these, use `kwargs`.
@@ -535,7 +533,6 @@ class StataSession():
 
     def resolve_return_type(self, cmd_name, stdout):
         """Resolve return type from osascript to Python object
-
         This must match the output type return by Windows Automation for the
         same command
         """
