@@ -14,7 +14,7 @@
 
 var builtins_base = [
   'frame', 'frames', 'pwf', 'cwf', 'frlink', 'frget',
-  'didreg', 'didregress', 'xtdidregress', 'ziologit', 'xtmlogit',
+  'didreg', 'didregress', 'xtdidreg', 'xtdidregress', 'ziologit', 'xtmlogit',
   'bayesvarstable', 'bayesfcast', 'bayesirf',
   'lasso', 'sqrtlasso', 'elasticnet', 'dsregress', 'dslogit', 'dspoisson',
   'poregress', 'pologit', 'popiosson', 'poivregress', 'xporegress', 'xpologit',
