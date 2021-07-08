@@ -22,14 +22,14 @@ from .stata_magics import StataMagics
 
 class StataKernel(Kernel):
     implementation = 'stata_kernel'
-    implementation_version = '1.12.2'
+    implementation_version = '1.12.3'
     language = 'stata'
     language_info = {
         'name': 'stata',
         'mimetype': 'text/x-stata',
         'codemirror_mode': 'stata',
         'file_extension': '.do',
-        'version': '16.1'}
+        'version': '17'}
     help_links = [
         {'text': 'stata_kernel Help', 'url': 'https://kylebarron.dev/stata_kernel/'},
         {'text': 'Stata Help', 'url': 'https://www.stata.com/features/documentation/'}
