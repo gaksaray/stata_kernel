@@ -67,24 +67,6 @@ cr or ;. If you want to change the delimiter, use #delimit ; or
     In [4]: #delimit cr
     delimiter now cr
 
-%help
-
-Display a help file in rich text
-
-    %help [-h] command_or_topic_name
-
-Add the term you want to search for after %help:
-
-    In [1]: %help histogram
-
-The terms in italics (Atom) or underlined (Jupyter Notebook) are links.
-Click on them to see another help menu.
-
-  ------------------ --------------------
-         Atom               [Atom]
-   Jupyter Notebook   [Jupyter Notebook]
-  ------------------ --------------------
-
 %html, %latex
 
 Display command output as HTML or LaTeX
