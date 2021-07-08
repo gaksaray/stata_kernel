@@ -80,54 +80,6 @@ class MagicParsers():
             '-n', dest='n', type=int, metavar='N', default=None,
             help="Execute statement N times per loop.", required=False)
 
-        self.help = StataParser(
-            prog='%help', kernel=kernel, description="Display HTML help.",
-            usage='%(prog)s [-h] command_or_topic_name')
-        self.help.add_argument(
-            'command_or_topic_name', nargs='*', type=str, help=SUPPRESS)
-
-        info = (
-            kernel.implementation, kernel.implementation_version,
-            kernel.language.title(), kernel.language_version)
-        self.help._msg_html = dedent(
-            """
-        <p style="font-family:Monospace;">
-        {0} {1} for {2} {3}. Type<br><br>
-
-            <span style='margin-left:1em;font-weight:bold;'>
-            %help kernel</span><br><br>
-
-        for help on using the kernel and<br><br>
-
-            <span style='margin-left:1em;font-weight:bold;'>
-            %help magics</span><br><br>
-
-        for info on magics. To see the help menu for a Stata command type<br><br>
-
-            <span style='margin-left:1em;font-weight:bold;'>
-            %help command_or_topic</span>
-        </p>
-        """.format(*info))
-        self.help._msg_plain = dedent(
-            """\
-        {0} {1} for {2} {3}.
-
-        Note: This front end cannot display rich HTML help. See the online
-        documentation at
-
-                https://kylebarron.dev/stata_kernel/
-
-        For kernel help in plain text, type
-
-            %help kernel
-
-        for help on using the kernel and
-
-            %help magics
-
-        for info on magics.
-        """.format(*info))
-
         self.head = StataParser(
             prog='%head', kernel=kernel,
             usage='%(prog)s [-h] [N] [varlist] [if]',
@@ -171,9 +123,6 @@ class MagicParsers():
 
 
 class StataMagics():
-    html_base = "https://www.stata.com"
-    html_help = urllib.parse.urljoin(html_base, "help.cgi?{}")
-
     magic_regex = re.compile(
         r'\A%(?P<magic>.+?)(?P<code>\s+.*)?\Z', flags=re.DOTALL + re.MULTILINE)
 
@@ -183,7 +132,6 @@ class StataMagics():
         # 'exit',
         'globals',
         'head',
-        'help',
         'hide_gui',
         'html',
         'latex',
@@ -195,15 +143,6 @@ class StataMagics():
         'tail']
     # 'time',
     # 'timeit'
-
-    csshelp_default = resource_filename(
-        'stata_kernel', 'css/_StataKernelHelpDefault.css')
-    help_kernel_html = resource_filename('stata_kernel', 'docs/index.html')
-    help_kernel_plain = resource_filename('stata_kernel', 'docs/index.txt')
-    help_magics_html = resource_filename(
-        'stata_kernel', 'docs/using_stata_kernel/magics.html')
-    help_magics_plain = resource_filename(
-        'stata_kernel', 'docs/using_stata_kernel/magics.txt')
 
     def __init__(self, kernel):
         self.quit_early = None
@@ -552,118 +491,6 @@ class StataMagics():
         self.graphs = 0
         print_kernel("Magic timeit has not been implemented.", kernel)
         return code
-
-    def magic_help(self, code, kernel):
-        self.status = -1
-        self.graphs = 0
-        scode = code.strip()
-        try:
-            self.parse.help.parse_args(scode.split(' '))
-        except:
-            return ''
-
-        if not scode:
-            resp = {
-                'data': {
-                    'text/html': self.parse.help._msg_html,
-                    'text/plain': self.parse.help._msg_plain},
-                'metadata': {}}
-            kernel.send_response(kernel.iopub_socket, 'display_data', resp)
-            return ''
-
-        if scode == 'kernel':
-            with open(self.help_kernel_html, 'r') as f:
-                help_html = f.read()
-
-            with open(self.help_kernel_plain, 'r') as f:
-                help_plain = f.read()
-
-            resp = {
-                'data': {
-                    'text/html': help_html,
-                    'text/plain': help_plain},
-                'metadata': {}}
-            kernel.send_response(kernel.iopub_socket, 'display_data', resp)
-            return ''
-        elif scode == 'magics':
-            with open(self.help_magics_html, 'r') as f:
-                help_html = f.read()
-
-            with open(self.help_magics_plain, 'r') as f:
-                help_plain = f.read()
-
-            resp = {
-                'data': {
-                    'text/html': help_html,
-                    'text/plain': help_plain},
-                'metadata': {}}
-            kernel.send_response(kernel.iopub_socket, 'display_data', resp)
-            return ''
-
-        cmd = scode.replace(" ", "_")
-        try:
-            reply = urllib.request.urlopen(self.html_help.format(cmd))
-            html = reply.read().decode("utf-8")
-            soup = bs(html, 'html.parser')
-
-            # Set root for links to https://ww.stata.com
-            for a in soup.find_all('a', href=True):
-                href = a.get('href')
-                match = re.search(r'{}(.*?)#'.format(cmd), href)
-                if match:
-                    hrelative = href.find('#')
-                    a['href'] = href[hrelative:]
-                elif not href.startswith('http'):
-                    link = a['href']
-                    match = re.search(r'/help.cgi\?(.+)$', link)
-                    # URL encode bad characters like %
-                    if match:
-                        link = '/help.cgi?'
-                        link += urllib.parse.quote_plus(match.group(1))
-                    a['href'] = urllib.parse.urljoin(self.html_base, link)
-                    a['target'] = '_blank'
-
-            # Remove header 'Stata 15 help for ...'
-            soup.find('h2').decompose()
-
-            # Remove Stata help menu
-            soup.find('div', id='menu').decompose()
-
-            # Remove Copyright notice
-            tags = ['a', 'font']
-            for tag in tags:
-                copyright = soup.find(tag, text='Copyright')
-                if copyright:
-                    copyright.find_parent("table").decompose()
-                    break
-
-            # Remove last hrule
-            soup.find_all('hr')[-1].decompose()
-
-            # Set all the backgrounds to transparent
-            for color in ['#ffffff', '#FFFFFF']:
-                for bg in ['bgcolor', 'background', 'background-color']:
-                    for tag in soup.find_all(attrs={bg: color}):
-                        if tag.get(bg):
-                            tag[bg] = 'transparent'
-
-            # Set html
-            css = soup.find('style', {'type': 'text/css'})
-            with open(self.csshelp_default, 'r') as default:
-                css.string = default.read()
-
-            fallback = 'This front-end cannot display HTML help.'
-            resp = {
-                'data': {
-                    'text/html': str(soup),
-                    'text/plain': fallback},
-                'metadata': {}}
-            kernel.send_response(kernel.iopub_socket, 'display_data', resp)
-        except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            msg = "Failed to fetch HTML help.\r\n{0}"
-            print_kernel(msg.format(e), kernel)
-
-        return ''
 
     def magic_exit(self, code, kernel):
         self.status = -1
