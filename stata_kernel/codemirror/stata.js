@@ -14,7 +14,13 @@
 
 var builtins_base = [
   'frame', 'frames', 'pwf', 'cwf', 'frlink', 'frget',
-  'didreg', 'didregress',
+  'didreg', 'didregress', 'xtdidregress', 'ziologit', 'xtmlogit',
+  'bayesvarstable', 'bayesfcast', 'bayesirf',
+  'lasso', 'sqrtlasso', 'elasticnet', 'dsregress', 'dslogit', 'dspoisson',
+  'poregress', 'pologit', 'popiosson', 'poivregress', 'xporegress', 'xpologit',
+  'xpopoisson', 'xpoivregress', 'bicplot',
+  'lasso', 'telasso', 'teoverlap',
+  'stintcox', 'stintphplot', 'stintcoxnp', 'meta', 'jdbc',
   'if', 'else', 'in', 'foreach', 'for', 'forv', 'forva',
   'forval', 'forvalu', 'forvalue', 'forvalues', 'by', 'bys',
   'bysort', 'quietly', 'qui', 'about', 'ac',
