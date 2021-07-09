@@ -35,7 +35,7 @@ def find_path():
     elif platform.system() == 'Darwin':
         return mac_find_path()
     else:
-        for i in ['stata-mp', 'stata-se', 'stata']:
+        for i in ['stata-mp', 'stata-se', 'stata-be', 'stata']:
             stata_path = which(i)
             if stata_path:
                 break
@@ -47,6 +47,7 @@ def win_find_path():
     import winreg
     reg = winreg.ConnectRegistry(None, winreg.HKEY_CLASSES_ROOT)
     subkeys = [
+        r'Stata17Do\shell\do\command',
         r'Stata16Do\shell\do\command', r'Stata15Do\shell\do\command',
         r'Stata14Do\shell\do\command', r'Stata13Do\shell\do\command',
         r'Stata12Do\shell\do\command']
@@ -80,7 +81,7 @@ def mac_find_path():
         return ''
 
     if len(dirs) > 1:
-        for ext in ['MP.app', 'SE.app', 'IC.app', '.app']:
+        for ext in ['MP.app', 'SE.app', 'BE.app', 'IC.app', '.app']:
             name = [x for x in dirs if x.name.endswith(ext)]
             if name:
                 dirs = name
@@ -91,7 +92,7 @@ def mac_find_path():
         return ''
 
     binaries = [x for x in path.iterdir()]
-    for pref in ['stata-mp', 'stata-se', 'stata', 'StataIC']:
+    for pref in ['stata-mp', 'stata-se', 'stata-be', 'stata', 'StataIC']:
         name = [x for x in binaries if x.name == pref]
         if name:
             binaries = name
