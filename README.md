@@ -11,3 +11,4 @@ To install in a conda environment:
 conda install git
 pip install git+git://github.com/gaksaray/stata_kernel@master
 ```
+Tested on Anaconda version 2021.05 and Stata/SE 17.0 for Windows (64-bit).
