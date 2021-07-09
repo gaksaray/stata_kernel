@@ -10,7 +10,7 @@ class TestKernelCompletions(StataKernelTestFramework):
         # Magics
         {
             'text': '%',
-            'matches': {'browse', 'delimit', 'globals', 'head', 'help',
+            'matches': {'browse', 'delimit', 'globals', 'head',
                         'hide_gui', 'locals', 'set', 'show_gui', 'status',
                         'tail', 'html', 'latex'}
         },
